@@ -1,7 +1,8 @@
 // server.ts
 import WebSocket, { WebSocketServer } from 'ws';
 
-const PORT: number = 8080;
+
+const PORT: number = parseInt(process.env.PORT || '8080', 10); // Default to 8080 for local development
 
 const server: WebSocketServer = new WebSocketServer({ port: PORT }, () => {
     console.log(`WebSocket server running on ws://localhost:${PORT}`);
