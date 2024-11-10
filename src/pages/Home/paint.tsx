@@ -140,7 +140,7 @@ const Paint: React.FC<PaintProps> = ({ value, strokesMap, setStrokesMap }) => {
 
             // Send the entire drawing data when the pointer is released
             if (isSender && socket.readyState === WebSocket.OPEN) {
-                console.log(`Sending stroke: ${JSON.stringify(strokeToSend)}`);
+                // console.log(`Sending stroke: ${JSON.stringify(strokeToSend)}`);
                 socket.send(JSON.stringify(strokeToSend));
             }
 
