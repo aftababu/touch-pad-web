@@ -1,12 +1,20 @@
 import { atom } from "jotai";
 
+export interface configAtomtypes {
+  size: number;
+  thinning: number;
+  smoothing: number;
+  streamline: number;
+  color: string;
+};
+
 // Main configuration atom
-export const configAtom = atom({
-  size: 4,
-  thinning: 0.5,
-  smoothing: 0.5,
-  streamline: 0.5,
-  color: "black",
+export const configAtom = atom<configAtomtypes>({
+  size: .5,          
+  thinning: 0,      
+  smoothing: 0,   
+  streamline: 0,  
+  color: "black",   
 });
 
 // Derived atom to update specific properties in configAtom
