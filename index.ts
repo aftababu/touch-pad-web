@@ -1,28 +1,43 @@
-// server.ts
-import WebSocket, { WebSocketServer } from 'ws';
+import WebSocket, { WebSocketServer } from "ws";
 
+const WS_PORT: number = parseInt(process.env.WS_PORT || "8080", 10);
 
-const PORT: number = parseInt(process.env.PORT || '8080', 10); // Default to 8080 for local development
-
-const server: WebSocketServer = new WebSocketServer({ port: PORT }, () => {
-    console.log(`WebSocket server running on ws://localhost:${PORT}`);
+const server: WebSocketServer = new WebSocketServer({ port: WS_PORT }, () => {
+    console.log(`WebSocket server running on ws://localhost:${WS_PORT}`);
 });
+const sessionClients: Map<string, Set<WebSocket>> = new Map();
 
-server.on('connection', (ws: WebSocket) => {
-    // console.log('New client connected');
+server.on('connection', (ws: WebSocket, req) => {
+    const urlParams = new URLSearchParams(req.url?.split('?')[1]);
+    const sessionId = urlParams.get('id');
+// console.log(sessionId);
+    if (!sessionId) {
+        ws.close(1008, 'Session ID required');
+        return;
+    }
+
+    if (!sessionClients.has(sessionId)) {
+        sessionClients.set(sessionId, new Set());
+    }
+    sessionClients.get(sessionId)?.add(ws);
+
 
     ws.on('message', (message: string) => {
-        // Broadcast the stroke data to all other connected clients
-        server.clients.forEach((client) => {
+        sessionClients.get(sessionId)?.forEach((client) => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-                // console.log(`Received stroke data: ${message}`);
+                // console.log(`Sending message to client: ${sessionId}`,message);
                 client.send(message);
             }
         });
     });
 
     ws.on('close', () => {
-        // console.log('Client disconnected');
+        sessionClients.get(sessionId)?.delete(ws);
+        if (sessionClients.get(sessionId)?.size === 0) {
+            sessionClients.delete(sessionId);
+        }
+
+        console.log(`Client disconnected from session: ${sessionId}`);
     });
 
     ws.on('error', (error: Error) => {
