@@ -28,7 +28,6 @@ const Home: React.FC = () => {
     localStorage.setItem("strokesMap", JSON.stringify(strokesMap));
   }, [strokesMap,setStrokesMap]);
 
-  // console.log(showGrid);
 
   return (
     <div className="h-screen w-screen z-50">

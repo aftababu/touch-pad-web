@@ -33,7 +33,7 @@ const Navbar = ({ handleGenarateLink,handleSetLink }: { handleGenarateLink: () =
             <SlidersHorizontalIcon className="cursor-pointer w-6  md:w-8 md:h-8 xl:w-[2.5rem] xl:h-[2.5rem]" />
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>Features</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <div onClick={() => setFeature({ generateModel: true })}>

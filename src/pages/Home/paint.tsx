@@ -20,30 +20,33 @@ interface PaintProps {
   move: boolean;
 }
 
-let socket: WebSocket;
+export let socket: WebSocket;
 
-function connectWebSocket(socketUrl: string,setIsSocketOpen: React.Dispatch<React.SetStateAction<boolean>>) {
-    socket = new WebSocket(socketUrl);
+function connectWebSocket(
+  socketUrl: string,
+  setIsSocketOpen: React.Dispatch<React.SetStateAction<boolean>>
+) {
+  socket = new WebSocket(socketUrl);
 
-    socket.onopen = () => {
-        console.log('WebSocket connection established.');
-        setIsSocketOpen(true);
-    };
+  socket.onopen = () => {
+    console.log("WebSocket connection established.");
+    setIsSocketOpen(true);
+  };
 
-    socket.onclose = (event) => {
-        console.log('WebSocket connection closed:', event.reason);
-        setIsSocketOpen(false);
+  socket.onclose = (event) => {
+    console.log("WebSocket connection closed:", event.reason);
+    setIsSocketOpen(false);
 
-        // Attempt reconnection after 1 second
-        setTimeout(() => {
-            console.log("Reconnecting WebSocket...");
-            connectWebSocket(socketUrl,setIsSocketOpen);
-        }, 1000);
-    };
+    // Attempt reconnection after 1 second
+    setTimeout(() => {
+      console.log("Reconnecting WebSocket...");
+      connectWebSocket(socketUrl, setIsSocketOpen);
+    }, 1000);
+  };
 
-    socket.onerror = (error) => {
-        console.error("WebSocket error:", error);
-    };
+  socket.onerror = (error) => {
+    console.error("WebSocket error:", error);
+  };
 }
 
 const Paint: React.FC<PaintProps> = ({
@@ -68,14 +71,16 @@ const Paint: React.FC<PaintProps> = ({
     x: number;
     y: number;
   } | null>(null);
-  const searchParams= useSearchParams();
+  const searchParams = useSearchParams();
 
   React.useEffect(() => {
     // Dynamically construct WebSocket URL based on searchParams and isSender
     const id = searchParams.get("id");
     // console.log(id);
-    const url = `${import.meta.env.VITE_WEBSOCKET || "ws://localhost:8080"}?id=${id}&isSender=${isSender}`;
-    
+    const url = `${
+      import.meta.env.VITE_WEBSOCKET || "ws://localhost:8080"
+    }?id=${id}&isSender=${isSender}`;
+
     connectWebSocket(url, setIsSocketOpen);
 
     socket.onmessage = async (event) => {
@@ -84,12 +89,24 @@ const Paint: React.FC<PaintProps> = ({
           const messageText = await event.data.text(); // Convert Blob to text
           // console.log("Received message receiver:", JSON.parse(messageText));
           const incomingStroke = JSON.parse(messageText);
-    
+
           if (incomingStroke.type === "stroke") {
             setStrokesMap((prevMap) => ({
               ...prevMap,
               strokes: [...(prevMap.strokes || []), incomingStroke],
             }));
+          } else if (incomingStroke.type === "delete") {
+            localStorage.removeItem("strokesMap");
+            setStrokesMap({ strokes: [] });
+          } else if (incomingStroke.type === "undo") {
+            setStrokesMap((prevMap) => ({
+              ...prevMap,
+              strokes: incomingStroke.newStrokes,
+            }));
+            localStorage.setItem(
+              "strokesMap",
+              JSON.stringify({ strokes: incomingStroke.newStrokes })
+            );
           }
         } catch (error) {
           console.error("Error parsing message:", error);
@@ -97,10 +114,8 @@ const Paint: React.FC<PaintProps> = ({
       }
     };
     return () => socket?.close();
-  }, [isSender, setStrokesMap, searchParams]);
-
-    
-    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function getRelativeCoordinates(
     e: React.PointerEvent<SVGSVGElement>
@@ -130,7 +145,7 @@ const Paint: React.FC<PaintProps> = ({
       });
     }
   }
-console.log(config.color);
+  // console.log(config.color);
   const handlePointerMove = React.useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
       if (move) {
@@ -257,15 +272,36 @@ console.log(config.color);
         })
       )
     : "";
-    let maxWidth = window.innerWidth;
-    const baseValue = 1.3; 
-    const incrementRate = 0.001; 
-    
+  let maxWidth = window.innerWidth;
+  const baseValue = 1.3;
+  const incrementRate = 0.001;
 
-      maxWidth = Math.max(maxWidth, window.innerWidth);
-    
-      const result = baseValue + (maxWidth * incrementRate);
+  maxWidth = Math.max(maxWidth, window.innerWidth);
 
+  const result = baseValue + maxWidth * incrementRate;
+  React.useEffect(() => {
+    setViewBox((prevViewBox) => {
+      const constrainedViewBox = {
+        ...prevViewBox,
+        width: Math.max(300, Math.min(prevViewBox.width, 5000)),
+        height: Math.max(300, Math.min(prevViewBox.height, 5000)),
+        x: Math.max(-2200, Math.min(prevViewBox.x, 3000)),
+        y: Math.max(-2200, Math.min(prevViewBox.y, 3000)),
+      };
+  
+      // Avoid redundant updates
+      if (
+        constrainedViewBox.width === prevViewBox.width &&
+        constrainedViewBox.height === prevViewBox.height &&
+        constrainedViewBox.x === prevViewBox.x &&
+        constrainedViewBox.y === prevViewBox.y
+      ) {
+        return prevViewBox;
+      }
+  
+      return constrainedViewBox;
+    });
+  }, [viewBox]);
   return (
     <svg
       onPointerDown={handlePointerDown}
@@ -277,13 +313,10 @@ console.log(config.color);
         touchAction: "none",
         border: "1px solid #ccc",
         cursor: isDragging ? "grabbing" : move ? "grab" : "crosshair",
-        transform: `scaleY(${result})`
-        
+        transform: `scaleY(${result})`,
       }}
-
-
     >
-          <style>
+      <style>
         {`
           @media (min-width: 800px) {
             svg {
@@ -302,7 +335,6 @@ console.log(config.color);
             d={d}
             fill="none"
             stroke={strokeDetails.color}
-
             strokeWidth={strokeDetails.size}
           />
         );

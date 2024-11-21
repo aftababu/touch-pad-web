@@ -46,7 +46,7 @@ function Context({ children }: { children: React.ReactNode }) {
       colorDialogOpen: false,
     }));
   };
-console.log(config.color);
+// console.log(config.color);
   // console.log(fontSizeDialogOpen,"hello",colorDialogOpen);
   return (
     <div className="h-full w-full">
